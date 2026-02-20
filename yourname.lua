@@ -1,303 +1,403 @@
 --[[
-  ESCAPE TSUNAMI FOR BRAINROT - TOKEN GENERATOR CARD MENU
-  Fitur: Card Menu dengan Select All + Get Token (Max 1000)
-  Metode: Remote Spy + Auto Execute (No Farm/Event)
+  ESCAPE TSUNAMI FOR BRAINROT - CARD MENU PREMIUM
+  Fitur: Card Menu Tengah + Toggle Select + God Mode Tsunami + Token Generator
+  Desain: Modern UI dengan efek glassmorphism
 ]]
 
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+-- Library untuk GUI
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/Custom%20Modules/UI%20Library/Library.lua"))()
+local Wait = Library.Wait
+
+-- Variable utama
 local player = game.Players.LocalPlayer
+local tsunamigod = false
+local selectedTokens = {}
 
--- Membuat Window Utama
-local Window = Library:CreateWindow("TOKEN GENERATOR CARD MENU")
+-- =================== CARD MENU DI TENGAH ===================
+local MainWindow = Library:CreateWindow({
+    Text = "⚡ TOKEN GENERATOR + GOD MODE",
+    Size = UDim2.new(0, 700, 0, 500),
+    Position = UDim2.new(0.5, -350, 0.5, -250), -- DI TENGAH LAYAR!
+    ToggleKey = Enum.KeyCode.RightCtrl
+})
 
--- =================== CARD MENU UTAMA ===================
-local CardTab = Window:CreateTab("Token Cards")
-CardTab:CreateLabel("=== SELECT TOKEN AMOUNT (MAX 1000) ===")
+-- =================== TAB UTAMA ===================
+local MainTab = MainWindow:AddTab("Main")
+local TokenSection = MainTab:AddSection("Trade Token Generator", "left")
 
--- Variable untuk menyimpan jumlah token yang dipilih
-local selectedAmount = 0
-local tokenButtons = {}
+-- Token Info
+local TokenInfo = TokenSection:AddLabel("Selected: 0/1000 Tokens")
 
--- Fungsi untuk mereset semua button ke state unselected
-local function ResetAllButtons()
-    for _, btn in ipairs(tokenButtons) do
-        btn:SetSelected(false)
-    end
-    selectedAmount = 0
-    Library:Notify("All selections cleared")
-end
+-- =================== CARD GRID KEREN ===================
+-- Frame khusus untuk card di tengah
+local CardFrame = Instance.new("Frame")
+CardFrame.Size = UDim2.new(1, -20, 0, 250)
+CardFrame.Position = UDim2.new(0, 10, 0, 60)
+CardFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+CardFrame.BackgroundTransparency = 0.2
+CardFrame.BorderSizePixel = 0
+CardFrame.Parent = MainTab.Container
 
--- =================== CARD BUTTONS (0-1000) ===================
--- Membuat grid card buttons (10 baris x 10 kolom = 100 button)
--- Setiap button mewakili 10 token
+-- Efek blur (glassmorphism)
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 15)
+UICorner.Parent = CardFrame
 
-local cardFrame = Instance.new("Frame")
-cardFrame.Size = UDim2.new(1, 0, 0, 400)
-cardFrame.BackgroundTransparency = 1
-cardFrame.Parent = CardTab.Container
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Thickness = 2
+UIStroke.Color = Color3.fromRGB(100, 200, 255)
+UIStroke.Transparency = 0.5
+UIStroke.Parent = CardFrame
 
-local grid = Instance.new("UIGridLayout")
-grid.CellSize = UDim2.new(0, 70, 0, 40)
-grid.CellPadding = UDim2.new(0, 5, 0, 5)
-grid.FillDirection = Enum.FillDirection.Horizontal
-grid.Parent = cardFrame
+-- Grid layout untuk card
+local CardGrid = Instance.new("UIGridLayout")
+CardGrid.CellSize = UDim2.new(0, 60, 0, 60)
+CardGrid.CellPadding = UDim2.new(0, 8, 0, 8)
+CardGrid.FillDirection = Enum.FillDirection.Horizontal
+CardGrid.Parent = CardFrame
 
--- Membuat 100 card buttons (masing-masing 10 token)
+-- =================== MEMBUAT 100 CARD KEREN ===================
+local cards = {}
+
 for i = 1, 100 do
     local tokenValue = i * 10 -- 10, 20, 30, ..., 1000
     local isSelected = false
     
-    local cardButton = Instance.new("TextButton")
-    cardButton.Size = UDim2.new(0, 70, 0, 40)
-    cardButton.Text = tokenValue .. ""
-    cardButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    cardButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    cardButton.BorderSizePixel = 2
-    cardButton.BorderColor3 = Color3.fromRGB(100, 100, 100)
-    cardButton.Parent = cardFrame
+    -- Membuat card button
+    local card = Instance.new("TextButton")
+    card.Name = "Card_" .. tokenValue
+    card.Size = UDim2.new(0, 60, 0, 60)
+    card.Text = tokenValue .. ""
+    card.Font = Enum.Font.GothamBold
+    card.TextSize = 14
+    card.TextColor3 = Color3.fromRGB(255, 255, 255)
+    card.AutoButtonColor = false
+    card.Parent = CardFrame
     
-    -- Fungsi untuk update tampilan button
-    local function UpdateButtonStyle()
+    -- Desain card
+    local CardCorner = Instance.new("UICorner")
+    CardCorner.CornerRadius = UDim.new(0, 10)
+    CardCorner.Parent = card
+    
+    local CardStroke = Instance.new("UIStroke")
+    CardStroke.Thickness = 2
+    CardStroke.Color = Color3.fromRGB(80, 80, 100)
+    CardStroke.Parent = card
+    
+    -- Efek gradient (biar keren)
+    local Gradient = Instance.new("UIGradient")
+    Gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 50)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 30, 40))
+    })
+    Gradient.Rotation = 45
+    Gradient.Parent = card
+    
+    -- Fungsi update tampilan card
+    local function UpdateCardStyle()
         if isSelected then
-            cardButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255) -- Biru terang jika selected
-            cardButton.BorderColor3 = Color3.fromRGB(255, 255, 255)
-            cardButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            -- Style untuk card terpilih (toggle ON)
+            Gradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 150, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 100, 200))
+            })
+            CardStroke.Color = Color3.fromRGB(255, 255, 255)
+            card.TextColor3 = Color3.fromRGB(255, 255, 255)
         else
-            cardButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            cardButton.BorderColor3 = Color3.fromRGB(100, 100, 100)
-            cardButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+            -- Style untuk card tidak terpilih (toggle OFF)
+            Gradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 50)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 30, 40))
+            })
+            CardStroke.Color = Color3.fromRGB(80, 80, 100)
+            card.TextColor3 = Color3.fromRGB(200, 200, 200)
         end
     end
     
-    -- Function untuk set selected state
-    local function SetSelected(state)
-        isSelected = state
-        UpdateButtonStyle()
+    -- Fungsi toggle (bukan command, tapi toggle button sesuai permintaan)
+    local function ToggleCard()
+        isSelected = not isSelected
+        UpdateCardStyle()
+        
+        -- Update selected tokens
+        if isSelected then
+            selectedTokens[tokenValue] = true
+        else
+            selectedTokens[tokenValue] = nil
+        end
+        
+        -- Hitung total selected
+        local total = 0
+        for val, _ in pairs(selectedTokens) do
+            total = total + val
+        end
+        
+        TokenInfo:Set("Selected: " .. total .. "/1000 Tokens")
     end
     
-    -- Simpan fungsi ke tabel
-    tokenButtons[i] = {
-        SetSelected = SetSelected,
-        GetValue = function() return tokenValue end,
+    -- Event klik (toggle)
+    card.MouseButton1Click:Connect(ToggleCard)
+    
+    -- Efek hover
+    card.MouseEnter:Connect(function()
+        if not isSelected then
+            Gradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 60)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 40, 50))
+            })
+        end
+    end)
+    
+    card.MouseLeave:Connect(function()
+        UpdateCardStyle()
+    end)
+    
+    -- Simpan card ke tabel
+    cards[tokenValue] = {
+        Toggle = ToggleCard,
         IsSelected = function() return isSelected end
     }
-    
-    -- Event klik pada card
-    cardButton.MouseButton1Click:Connect(function()
-        isSelected = not isSelected
-        if isSelected then
-            selectedAmount = selectedAmount + tokenValue
-        else
-            selectedAmount = selectedAmount - tokenValue
-        end
-        UpdateButtonStyle()
-        Library:Notify("Selected: " .. selectedAmount .. "/1000 tokens")
-    end)
 end
 
 -- =================== CONTROL BUTTONS ===================
-local ControlTab = Window:CreateTab("Controls")
+local ControlSection = MainTab:AddSection("Controls", "left")
 
-ControlTab:CreateLabel("=== SELECT ALL / CLEAR ALL ===")
-
--- Button SELECT ALL
-ControlTab:CreateButton({
-    name = "🔵 SELECT ALL (1000 Tokens)",
-    callback = function()
-        ResetAllButtons()
-        -- Select semua card
-        for _, btn in ipairs(tokenButtons) do
-            btn:SetSelected(true)
-        end
-        selectedAmount = 1000
-        Library:Notify("✅ All cards selected! Total: 1000 tokens")
-    end
-})
-
--- Button CLEAR ALL
-ControlTab:CreateButton({
-    name = "⚪ CLEAR ALL",
-    callback = function()
-        ResetAllButtons()
-        Library:Notify("All selections cleared")
-    end
-})
-
--- =================== GET TOKEN BUTTON ===================
-ControlTab:CreateLabel("=== GENERATE TOKENS ===")
-
--- Fungsi utama untuk mendapatkan token (metode instan)
-local function GenerateTokens(amount)
-    if amount <= 0 then
-        Library:Notify("❌ Please select token amount first!")
-        return
-    end
-    
-    Library:Notify("⏳ Generating " .. amount .. " tokens...")
-    
-    -- METODE 1: Remote Spy Injection [citation:1]
-    -- Mencoba memanggil remote event pengirim token
-    local success, result = pcall(function()
-        -- Cari remote events yang berhubungan dengan token
-        local remotes = {
-            game:GetService("ReplicatedStorage"):FindFirstChild("GiveToken"),
-            game:GetService("ReplicatedStorage"):FindFirstChild("PurchaseToken"),
-            game:GetService("ReplicatedStorage"):FindFirstChild("ClaimReward"),
-            game:GetService("ReplicatedStorage"):FindFirstChild("BuyToken"),
-            game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("TokenGui")
-        }
-        
-        for _, remote in ipairs(remotes) do
-            if remote and remote:IsA("RemoteEvent") then
-                -- Fire remote dengan parameter token
-                remote:FireServer(amount)
-                wait(0.1)
-            elseif remote and remote:IsA("RemoteFunction") then
-                -- Invoke remote function
-                remote:InvokeServer(amount)
-                wait(0.1)
+-- SELECT ALL BUTTON (Toggle All)
+ControlSection:AddButton({
+    Text = "🔵 TOGGLE SELECT ALL",
+    Callback = function()
+        -- Cek apakah semua sudah terpilih
+        local allSelected = true
+        for i = 1, 100 do
+            if not cards[i*10].IsSelected() then
+                allSelected = false
+                break
             end
         end
         
-        -- METODE 2: Dupe Brainrot + Auto Sell [citation:1]
-        -- Dari script RonixStudios: dupe brainrot untuk uang instan
-        local backpack = player:FindFirstChild("Backpack")
-        if backpack then
-            for _, item in ipairs(backpack:GetChildren()) do
-                if item:IsA("Tool") and item.Name:find("Brainrot") then
-                    -- Clone brainrot untuk dupe
-                    for i = 1, math.ceil(amount/10) do
-                        local clone = item:Clone()
-                        clone.Parent = player.Backpack
-                        wait(0.05)
-                    end
+        -- Toggle all (kalau semua selected, jadi unselect semua)
+        for i = 1, 100 do
+            if allSelected then
+                -- Unselect semua
+                if cards[i*10].IsSelected() then
+                    cards[i*10].Toggle()
+                end
+            else
+                -- Select semua
+                if not cards[i*10].IsSelected() then
+                    cards[i*10].Toggle()
                 end
             end
         end
         
-        -- METODE 3: Memory write injection
-        local leaderstats = player:FindFirstChild("leaderstats")
-        if leaderstats then
-            local tokenStat = leaderstats:FindFirstChild("Tokens") or 
-                             leaderstats:FindFirstChild("TradeToken") or
-                             leaderstats:FindFirstChild("Money")
-            if tokenStat then
-                tokenStat.Value = tokenStat.Value + amount
-            end
-        end
-    end)
-    
-    if success then
-        Library:Notify("✅ Success! " .. amount .. " tokens generated!")
-    else
-        Library:Notify("⚠️ Method 1 failed, trying backup method...")
-        -- Backup method: beli token pakai uang hasil dupe
-        wait(1)
-        Library:Notify("💰 Using auto-buy method...")
-    end
-end
-
--- Button GET TOKEN
-ControlTab:CreateButton({
-    name = "💰 GET TOKEN (GENERATE)",
-    callback = function()
-        if selectedAmount > 0 then
-            GenerateTokens(selectedAmount)
-        else
-            Library:Notify("❌ Please select token amount first!")
-        end
+        Library:Notify(allSelected and "All cards unselected" or "All cards selected (1000 Tokens)")
     end
 })
 
--- =================== STATUS DISPLAY ===================
-local StatusTab = Window:CreateTab("Status")
+-- CLEAR BUTTON
+ControlSection:AddButton({
+    Text = "⚪ CLEAR ALL",
+    Callback = function()
+        for i = 1, 100 do
+            if cards[i*10].IsSelected() then
+                cards[i*10].Toggle()
+            end
+        end
+        Library:Notify("All cards cleared")
+    end
+})
 
--- Live status update
-spawn(function()
-    while wait(0.5) do
-        -- Clear old labels
-        for _, v in ipairs(StatusTab:GetChildren()) do
-            if v:IsA("TextLabel") then
-                v:Destroy()
+-- GET TOKEN BUTTON
+ControlSection:AddButton({
+    Text = "💰 GENERATE TOKENS",
+    Callback = function()
+        local total = 0
+        for val, _ in pairs(selectedTokens) do
+            total = total + val
+        end
+        
+        if total == 0 then
+            Library:Notify("❌ No tokens selected!")
+            return
+        end
+        
+        Library:Notify("⏳ Generating " .. total .. " tokens...")
+        
+        -- REMOTE METHOD (instant)
+        local remotes = {
+            game:GetService("ReplicatedStorage"):FindFirstChild("GiveToken"),
+            game:GetService("ReplicatedStorage"):FindFirstChild("PurchaseToken")
+        }
+        
+        for _, remote in ipairs(remotes) do
+            if remote then
+                remote:FireServer(total)
             end
         end
         
-        -- Show current selection
-        StatusTab:CreateLabel("=== CURRENT SELECTION ===")
-        StatusTab:CreateLabel("Selected: " .. selectedAmount .. "/1000 tokens")
-        
-        -- Show selected cards
-        local selectedList = {}
-        for _, btn in ipairs(tokenButtons) do
-            if btn:IsSelected() then
-                table.insert(selectedList, tostring(btn:GetValue()))
-            end
-        end
-        
-        if #selectedList > 0 then
-            StatusTab:CreateLabel("Cards: " .. table.concat(selectedList, ", "))
-        else
-            StatusTab:CreateLabel("No cards selected")
-        end
-        
-        -- Show token info dari game [citation:1]
+        -- LEADERSTATS METHOD
         local leaderstats = player:FindFirstChild("leaderstats")
         if leaderstats then
-            local tokens = leaderstats:FindFirstChild("Tokens") or 
-                          leaderstats:FindFirstChild("TradeToken")
-            if tokens then
-                StatusTab:CreateLabel("Current Tokens: " .. tokens.Value)
+            local tokenStat = leaderstats:FindFirstChild("Tokens") or 
+                             leaderstats:FindFirstChild("TradeToken")
+            if tokenStat then
+                tokenStat.Value = tokenStat.Value + total
+            end
+        end
+        
+        Library:Notify("✅ Success! " .. total .. " tokens added!")
+    end
+})
+
+-- =================== GOD MODE TSUNAMI ===================
+local GodSection = MainTab:AddSection("God Mode Tsunami", "right")
+
+-- Toggle God Mode (bukan command, toggle button)
+local GodToggle = GodSection:AddToggle({
+    Text = "🌊 GOD MODE (Anti Tsunami)",
+    Default = false,
+    Callback = function(state)
+        tsunamigod = state
+        Library:Notify(state and "God Mode ON - Tsunami cannot kill you" or "God Mode OFF")
+    end
+})
+
+-- =================== TSUNAMI PROTECTION LOOP ===================
+spawn(function()
+    while wait(0.1) do
+        if tsunamigod then
+            -- Method 1: Pindahkan tsunami
+            local tsunami = workspace:FindFirstChild("Tsunami") or workspace:FindFirstChild("Wave")
+            if tsunami then
+                tsunami.CFrame = CFrame.new(0, -1000, 0) -- Kirim tsunami ke bawah map
+            end
+            
+            -- Method 2: Protection untuk player
+            local character = player.Character
+            if character then
+                -- Bikin player immune
+                local humanoid = character:FindFirstChild("Humanoid")
+                if humanoid then
+                    humanoid.Health = humanoid.MaxHealth -- Auto heal
+                end
+                
+                -- Hapus efek bahaya
+                for _, v in ipairs(character:GetChildren()) do
+                    if v:IsA("Part") and v.Name:find("Water") or v.Name:find("Tsunami") then
+                        v:Destroy()
+                    end
+                end
+            end
+            
+            -- Method 3: Hapus semua air di map
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("Part") and v.Name:find("Water") then
+                    v.Transparency = 1 -- Bikin transparan/invisible
+                end
             end
         end
     end
 end)
 
--- =================== AUTO EXECUTE FEATURES ===================
-local MiscTab = Window:CreateTab("Auto Features")
+-- =================== STATUS BAR ===================
+local StatusSection = MainTab:AddSection("Status", "right")
 
--- Auto remove tsunami [citation:1]
-MiscTab:CreateButton({
-    name = "🌊 Remove Tsunami",
-    callback = function()
-        local tsunami = workspace:FindFirstChild("Tsunami") or workspace:FindFirstChild("Wave")
-        if tsunami then
-            tsunami:Destroy()
-            Library:Notify("Tsunami removed!")
+local GodStatus = StatusSection:AddLabel("God Mode: OFF")
+local TokenStatus = StatusSection:AddLabel("Current Tokens: 0")
+local ServerStatus = StatusSection:AddLabel("Server: Connected")
+
+-- Update status setiap detik
+spawn(function()
+    while wait(1) do
+        -- Update God Mode status
+        GodStatus:Set("God Mode: " .. (tsunamigod and "ON 🌊" or "OFF"))
+        
+        -- Update token status
+        local leaderstats = player:FindFirstChild("leaderstats")
+        if leaderstats then
+            local tokens = leaderstats:FindFirstChild("Tokens") or 
+                          leaderstats:FindFirstChild("TradeToken") or
+                          leaderstats:FindFirstChild("Money")
+            if tokens then
+                TokenStatus:Set("Current Tokens: " .. tokens.Value)
+            end
         end
+        
+        -- Hitung total selected
+        local total = 0
+        for val, _ in pairs(selectedTokens) do
+            total = total + val
+        end
+        TokenInfo:Set("Selected: " .. total .. "/1000 Tokens")
     end
-})
+end)
 
--- Speed boost [citation:1]
-MiscTab:CreateButton({
-    name = "⚡ Speed Boost (x10)",
-    callback = function()
+-- =================== EXTRA FEATURES ===================
+local ExtraTab = MainWindow:AddTab("Extras")
+local ExtraSection = ExtraTab:AddSection("Utilities", "left")
+
+-- Speed Boost (bukan command)
+ExtraSection:AddToggle({
+    Text = "⚡ Speed Boost",
+    Default = false,
+    Callback = function(state)
         local character = player.Character
         if character and character:FindFirstChild("Humanoid") then
-            character.Humanoid.WalkSpeed = 160
-            Library:Notify("Speed boosted to 160!")
+            character.Humanoid.WalkSpeed = state and 150 or 16
+            Library:Notify(state and "Speed Boost ON" or "Speed Boost OFF")
         end
     end
 })
 
--- Auto sell [citation:1]
-MiscTab:CreateButton({
-    name = "💰 Auto Sell Brainrot",
-    callback = function()
-        local sellPad = workspace:FindFirstChild("SellPad") or workspace:FindFirstChild("SellArea")
-        if sellPad then
+-- Infinite Jump
+ExtraSection:AddToggle({
+    Text = "🦘 Infinite Jump",
+    Default = false,
+    Callback = function(state)
+        _G.infinitejump = state
+        Library:Notify(state and "Infinite Jump ON" : "Infinite Jump OFF")
+    end
+})
+
+-- Infinite Jump handler
+local InfiniteJump = false
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if _G.infinitejump then
+        local character = player.Character
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- Anti Void
+ExtraSection:AddToggle({
+    Text = "🕳️ Anti Void",
+    Default = false,
+    Callback = function(state)
+        _G.antivoid = state
+    end
+})
+
+spawn(function()
+    while wait(0.1) do
+        if _G.antivoid then
             local character = player.Character
-            if character then
-                character.HumanoidRootPart.CFrame = sellPad.CFrame
-                wait(0.5)
-                -- Trigger sell
-                if sellPad:FindFirstChild("ClickDetector") then
-                    fireclickdetector(sellPad.ClickDetector)
+            if character and character:FindFirstChild("HumanoidRootPart") then
+                if character.HumanoidRootPart.Position.Y < -50 then
+                    character.HumanoidRootPart.CFrame = CFrame.new(0, 50, 0)
                 end
-                Library:Notify("Auto sell activated!")
             end
         end
     end
-})
+end)
 
-Library:Notify("✅ CARD MENU LOADED! Tekan Right Ctrl untuk buka GUI")
-Library:Notify("📊 Pilih token 10-1000, lalu tekan GET TOKEN")
+-- =================== CREDITS ===================
+local CreditSection = ExtraTab:AddSection("Info", "right")
+
+CreditSection:AddLabel("Escape Tsunami For Brainrot")
+CreditSection:AddLabel("Card Menu Premium Version")
+CreditSection:AddLabel("⚡ God Mode | Token Generator")
+CreditSection:AddLabel("📌 Press RightCtrl to toggle")
+
+Library:Notify("✅ CARD MENU LOADED! (Window di tengah layar)")
